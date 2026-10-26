@@ -3,5 +3,35 @@
     "id": "flixer.official",
     "name": "Official Flixer Plugins",
     "description": "Official, independently versioned extensions maintained by the Flixer project.",
-    "plugins": []
+    "plugins": [
+        {
+            "id": "flixer.example",
+            "name": "Flixer Example Plugin",
+            "description": "Demonstrates an authenticated WASI backend route and permission-scoped persistent storage.",
+            "author": "Flixer",
+            "capabilities": [
+                "api.routes",
+                "backend.storage"
+            ],
+            "permissions": [
+                "api.routes.hello",
+                "storage.plugin.read",
+                "storage.plugin.write",
+                "storage.user.read",
+                "storage.user.write"
+            ],
+            "targets": [
+                "flixer"
+            ],
+            "versions": [
+                {
+                    "version": "1.0.0",
+                    "manifest": "plugins/example/1.0.0/plugin.json",
+                    "package": "plugins/example/1.0.0/package.tar.gz",
+                    "sha256": "923d0616bfa1cceeadd4e8a17eb208a2f357ba0aef6b4f4d4d7e3b36420870d6",
+                    "size": 939190
+                }
+            ]
+        }
+    ]
 }
