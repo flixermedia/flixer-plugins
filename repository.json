@@ -42,6 +42,32 @@
                     "size": 941153
                 }
             ]
+        },
+        {
+            "id": "flixer.skipmedb",
+            "name": "SkipMe.db",
+            "description": "SkipMe.db segment integration for Flixer: crowd-sourced intro, recap, credits and preview timestamps.",
+            "author": "Flixer",
+            "capabilities": [
+                "media.segments",
+                "network.http"
+            ],
+            "permissions": [
+                "media.segments.lookup",
+                "network.http.database.skipme.deno.net"
+            ],
+            "targets": [
+                "flixer"
+            ],
+            "versions": [
+                {
+                    "version": "1.0.0",
+                    "manifest": "plugins/skipmedb/1.0.0/plugin.json",
+                    "package": "plugins/skipmedb/1.0.0/package.tar.gz",
+                    "sha256": "86b6a5bcac8a920205c3a4224c8f442c360225f556877288c1eea5435f11540b",
+                    "size": 1118644
+                }
+            ]
         }
     ]
 }
