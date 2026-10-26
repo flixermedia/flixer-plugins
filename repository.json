@@ -1,0 +1,7 @@
+{
+    "manifestVersion": 1,
+    "id": "flixer.official",
+    "name": "Official Flixer Plugins",
+    "description": "Official, independently versioned extensions maintained by the Flixer project.",
+    "plugins": []
+}
