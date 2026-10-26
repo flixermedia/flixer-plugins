@@ -36,7 +36,7 @@ func opPage(c *Ctx) (any, error) {
 	if body.Query == nil {
 		body.Query = map[string]string{}
 	}
-	cfg := parseSettings(c.env.Settings)
+	cfg := loadSettings(c)
 	var view node
 	if body.Query["view"] == "details" {
 		view = detailsView(c, cfg, body.Query)
@@ -58,7 +58,8 @@ func listView(c *Ctx, cfg settings, q map[string]string) node {
 	admin := c.isAdmin()
 	tabs := []tabSpec{{ID: "discover", Label: "Discover"}, {ID: "search", Label: "Search"}, {ID: "mine", Label: "My requests"}}
 	if admin {
-		tabs = append(tabs, tabSpec{ID: "all", Label: "All requests"}, tabSpec{ID: "services", Label: "Services"}, tabSpec{ID: "users", Label: "Users"})
+		tabs = []tabSpec{{ID: "settings", Label: "Settings"}, {ID: "services", Label: "Servers"}, {ID: "users", Label: "Users"}, {ID: "all", Label: "Requests queue"}}
+		tabs = append(tabs, tabSpec{ID: "discover", Label: "Discover"}, tabSpec{ID: "search", Label: "Search"}, tabSpec{ID: "mine", Label: "My requests"})
 	}
 	active := q["tab"]
 	found := false
@@ -66,10 +67,12 @@ func listView(c *Ctx, cfg settings, q map[string]string) node {
 		found = found || tab.ID == active
 	}
 	if !found {
-		active = "discover"
+		active = tabs[0].ID
 	}
 	var content []node
 	switch active {
+	case "settings":
+		content = settingsContent(c, cfg)
 	case "discover":
 		content = discoverContent(c, cfg)
 	case "search":
@@ -77,7 +80,7 @@ func listView(c *Ctx, cfg settings, q map[string]string) node {
 	case "mine":
 		content = requestsContent(c, cfg, q, false)
 	case "all":
-		content = requestsContent(c, cfg, q, true)
+		content = []node{section("Requests queue", "Approve, decline or retry what people asked for.", nil, requestsContent(c, cfg, q, true)...)}
 	case "services":
 		content = servicesContent(c, q)
 	case "users":
@@ -294,7 +297,7 @@ func discoverContent(c *Ctx, cfg settings) []node {
 
 	out := configWarnings(c, cfg)
 	if c.isAdmin() && !eff.Movies && !eff.TV && !eff.Music {
-		out = append(out, alert("Add and finish setting up a Sonarr, Radarr or Lidarr server in the Services tab to enable requests.", "info"))
+		out = append(out, alert("Add and finish setting up a Sonarr, Radarr or Lidarr server on the Servers tab to enable requests.", "info"))
 	}
 	if acc := resolveAccess(c.isAdmin(), eff, r1.Limit); !acc.CanRequest {
 		out = append(out, alert("You are not allowed to make requests.", "info"))
@@ -464,6 +467,10 @@ func requestRowNode(c *Ctx, row requestRow, tab string, names map[string]string,
 	if msg := str(row.Error); row.Status == "failed" && msg != "" {
 		details = append(details, textNode(msg, "danger"))
 	}
+	queued := row.Status == "approved" && row.SendAttempts != nil
+	if queued {
+		details = append(details, textNode("Queued - will be sent shortly.", "muted"))
+	}
 	date := row.CreatedAt
 	if len(date) >= 10 {
 		date = date[:10]
@@ -471,7 +478,7 @@ func requestRowNode(c *Ctx, row requestRow, tab string, names map[string]string,
 	cells := map[string]any{
 		"title":  column(1, details...),
 		"type":   typeLabels[row.Type],
-		"status": badge(statusLabels[row.Status], statusTone(row.Status)),
+		"status": badge(statusLabel(row), statusTone(row.Status)),
 		"date":   date,
 	}
 	var actions []node
@@ -487,6 +494,10 @@ func requestRowNode(c *Ctx, row requestRow, tab string, names map[string]string,
 			actions = append(actions, button("Approve", action{Op: "approve", Body: hint, Reload: true}, "primary"))
 		case "failed":
 			actions = append(actions, button("Retry", action{Op: "retry", Body: hint, Reload: true}, "primary"))
+		case "approved":
+			if queued {
+				actions = append(actions, button("Send now", action{Op: "retry", Body: hint, Reload: true}, "primary"))
+			}
 		}
 		if row.Status == "pending" {
 			actions = append(actions, form([]field{

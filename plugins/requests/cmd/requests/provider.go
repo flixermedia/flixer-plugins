@@ -13,8 +13,8 @@ const (
 	tmdbImages  = "https://image.tmdb.org/t/p"
 	discogsAPI  = "https://api.discogs.com"
 	maxSearch   = 24
-	noTMDBText  = "TMDB is not configured. Add a TMDB API key in the plugin settings."
-	noDiscogs   = "Discogs is not configured. Add a Discogs token in the plugin settings."
+	noTMDBText  = "TMDB is not configured. Add a TMDB API key on the Settings tab."
+	noDiscogs   = "Discogs is not configured. Add a Discogs token on the Settings tab."
 	errNotFound = "Not found at the metadata provider."
 )
 
@@ -135,7 +135,7 @@ func decodeProvider(result hostResult) (obj, string) {
 		case result.Status == 0:
 			return nil, "The metadata provider could not be reached."
 		default:
-			return nil, fmt.Sprintf("The metadata provider answered with HTTP %d. Check its API key in the plugin settings.", result.Status)
+			return nil, fmt.Sprintf("The metadata provider answered with HTTP %d. Check its API key on the Settings tab.", result.Status)
 		}
 	}
 	var body any

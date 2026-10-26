@@ -46,6 +46,12 @@ func service(id, kind, name string) serviceRow {
 	return s
 }
 
+// fakeNoTVDB makes the fake TMDB report no TVDB id for the show.
+var fakeNoTVDB bool
+
+// fakeMovieExists makes the fake Radarr already have the movie.
+var fakeMovieExists bool
+
 func fixture(t *testing.T) *fakeHost {
 	h := newFakeHost(t)
 	h.users = []hostUser{
@@ -80,6 +86,9 @@ func defaultRouter(h *fakeHost) func(method, rawURL string, headers map[string]s
 			case path == "/3/tv/1399":
 				return 200, thronesJSON
 			case path == "/3/tv/1399/external_ids":
+				if fakeNoTVDB {
+					return 200, `{"tvdb_id":null}`
+				}
 				return 200, `{"tvdb_id":121361}`
 			case path == "/3/search/multi":
 				return 200, `{"results":[{"id":603,"media_type":"movie","title":"The Matrix","release_date":"1999-03-30","poster_path":"/matrix.jpg"},{"id":1399,"media_type":"tv","name":"Game of Thrones","first_air_date":"2011-04-17"},{"id":7,"media_type":"person","name":"Someone"}]}`
@@ -104,6 +113,9 @@ func defaultRouter(h *fakeHost) func(method, rawURL string, headers map[string]s
 			case method == "GET" && path == "/api/v3/rootfolder":
 				return 200, `[{"path":"/media","freeSpace":10}]`
 			case method == "GET" && path == "/api/v3/movie":
+				if fakeMovieExists {
+					return 200, `[{"id":1,"hasFile":false}]`
+				}
 				return 200, `[]`
 			case method == "GET" && path == "/api/v3/movie/lookup/tmdb":
 				return 200, `{"title":"The Matrix","tmdbId":603,"year":1999}`

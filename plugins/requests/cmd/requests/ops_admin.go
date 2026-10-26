@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -320,7 +321,8 @@ func opServiceTest(c *Ctx) (any, error) {
 	if result.Version != "" {
 		text += ", version " + result.Version
 	}
-	return actionResult{Toast: &toast{Text: text + "."}}, nil
+	text += fmt.Sprintf(". %d root folders, %d quality profiles.", len(result.Roots), len(result.Quality))
+	return actionResult{Toast: &toast{Text: text}}, nil
 }
 
 type limitR1 struct {

@@ -90,7 +90,8 @@
                 "secrets",
                 "users",
                 "library",
-                "notifications"
+                "notifications",
+                "search.results"
             ],
             "permissions": [
                 "api.routes.page",
@@ -103,6 +104,8 @@
                 "api.routes.service-delete",
                 "api.routes.service-test",
                 "api.routes.user-limit-save",
+                "api.routes.settings-save",
+                "api.routes.search",
                 "api.routes.sync",
                 "database.tables",
                 "secrets.manage",
@@ -123,6 +126,13 @@
                     "package": "plugins/requests/1.0.0/package.tar.gz",
                     "sha256": "61ca8e0295c13b3b4e8543fd3defd4b780fd4228eedfb45b09b37b7d676fc7fb",
                     "size": 1409780
+                },
+                {
+                    "version": "1.1.0",
+                    "manifest": "plugins/requests/1.1.0/plugin.json",
+                    "package": "plugins/requests/1.1.0/package.tar.gz",
+                    "sha256": "8e9414862ad0e3c49f4536d86dc86cf09946ecf132a559a8bbdb16d8e41ae8cc",
+                    "size": 1469081
                 }
             ]
         }

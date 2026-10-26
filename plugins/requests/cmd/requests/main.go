@@ -19,7 +19,9 @@ var operations = map[string]func(c *Ctx) (any, error){
 	"service-delete":  opServiceDelete,
 	"service-test":    opServiceTest,
 	"user-limit-save": opUserLimitSave,
+	"settings-save":   opSettingsSave,
 	"sync":            opSync,
+	"search":          opSearch,
 }
 
 func main() {

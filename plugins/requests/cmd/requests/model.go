@@ -133,6 +133,8 @@ type requestRow struct {
 	DeclineReason    *string `json:"decline_reason"`
 	Error            *string `json:"error"`
 	ProcessedBy      *string `json:"processed_by"`
+	TVDB             *int    `json:"tvdb_id"`
+	SendAttempts     *int    `json:"send_attempts"`
 	CreatedAt        string  `json:"created_at"`
 	UpdatedAt        string  `json:"updated_at"`
 }

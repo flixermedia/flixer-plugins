@@ -83,7 +83,7 @@ func TestPageTabsByRole(t *testing.T) {
 		want      string
 	}{
 		{"user", userID, "discover,search,mine"},
-		{"admin", adminID, "discover,search,mine,all,services,users"},
+		{"admin", adminID, "settings,services,users,all,discover,search,mine"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.role, func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestPageDiscover(t *testing.T) {
 			t.Errorf("missing %q", want)
 		}
 	}
-	if res.Rounds != 2 {
+	if res.Rounds != 3 {
 		t.Fatalf("rounds = %d", res.Rounds)
 	}
 }
@@ -147,7 +147,7 @@ func TestPageDiscover(t *testing.T) {
 func TestPageDiscoverWithoutKeysOrServers(t *testing.T) {
 	t.Run("missing keys warn admins only", func(t *testing.T) {
 		h := fixture(t)
-		_, admin := pageView(t, h, "admin", adminID, nil, map[string]any{})
+		_, admin := pageView(t, h, "admin", adminID, map[string]string{"tab": "discover"}, map[string]any{})
 		if !strings.Contains(admin.Raw, noTMDBText) || !strings.Contains(admin.Raw, noDiscogs) {
 			t.Fatal("admin warnings missing")
 		}
@@ -159,8 +159,8 @@ func TestPageDiscoverWithoutKeysOrServers(t *testing.T) {
 	t.Run("without servers nothing can be requested", func(t *testing.T) {
 		h := fixture(t)
 		h.tables[tableServices] = nil
-		_, res := pageView(t, h, "admin", adminID, nil, withSettings(nil))
-		if !strings.Contains(res.Raw, "Services tab") || strings.Contains(res.Raw, "Popular movies") {
+		_, res := pageView(t, h, "admin", adminID, map[string]string{"tab": "discover"}, withSettings(nil))
+		if !strings.Contains(res.Raw, "Servers tab") || strings.Contains(res.Raw, "Popular movies") {
 			t.Fatal("expected the setup hint and no sections")
 		}
 	})
@@ -263,7 +263,7 @@ func TestPageAllRequestsAdmin(t *testing.T) {
 func TestPageServices(t *testing.T) {
 	h := fixture(t)
 	_, list := pageView(t, h, "admin", adminID, map[string]string{"tab": "services"}, withSettings(nil))
-	for _, want := range []string{"Movies", "Shows", "Music", "https://radarr.example.com", `"op":"service-test"`, `"op":"service-delete"`, `"op":"service-save"`, `"type":"password"`} {
+	for _, want := range []string{"Movies", "Shows", "Music", "https://radarr.example.com", `"op":"service-test"`, `"op":"service-delete"`} {
 		if !strings.Contains(list.Raw, want) {
 			t.Errorf("missing %q", want)
 		}
@@ -272,7 +272,7 @@ func TestPageServices(t *testing.T) {
 	if !strings.Contains(edit.Raw, `"name":"rootFolder"`) || !strings.Contains(edit.Raw, "/tv") || !strings.Contains(edit.Raw, "HD") {
 		t.Fatal("edit form should offer the server's folders and profiles")
 	}
-	if edit.Rounds != 2 {
+	if edit.Rounds != 3 {
 		t.Fatalf("rounds = %d", edit.Rounds)
 	}
 	t.Run("unreachable server falls back to text inputs", func(t *testing.T) {
@@ -312,7 +312,7 @@ func TestPageDetails(t *testing.T) {
 				t.Errorf("missing %q", want)
 			}
 		}
-		if res.Rounds != 2 {
+		if res.Rounds != 3 {
 			t.Fatalf("rounds = %d", res.Rounds)
 		}
 	})

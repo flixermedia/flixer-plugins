@@ -128,12 +128,29 @@ type field struct {
 	Placeholder string   `json:"placeholder,omitempty"`
 	Help        string   `json:"help,omitempty"`
 	Required    bool     `json:"required,omitempty"`
+	Disabled    bool     `json:"disabled,omitempty"`
+	HasValue    bool     `json:"hasValue,omitempty"`
 	Options     []option `json:"options,omitempty"`
 	Min         *int     `json:"min,omitempty"`
 	Max         *int     `json:"max,omitempty"`
 }
 
 func hidden(name string, value any) field { return field{Name: name, Type: "hidden", Value: value} }
+
+// section is a titled card around related content.
+func section(title, description string, actions []node, children ...node) node {
+	n := node{"type": "section", "children": nodes(children...)}
+	if title != "" {
+		n["title"] = title
+	}
+	if description != "" {
+		n["description"] = description
+	}
+	if len(actions) > 0 {
+		n["actions"] = actions
+	}
+	return n
+}
 
 func form(fields []field, label string, act action, variant, layout string) node {
 	n := node{
@@ -207,6 +224,14 @@ func statusTone(status string) string {
 
 var statusLabels = map[string]string{
 	"pending": "Pending", "approved": "Approved", "declined": "Declined", "failed": "Failed", "available": "Available", "none": "Not Requested",
+}
+
+// statusLabel names a request's status; approved requests that wait for the sync to send them say so.
+func statusLabel(row requestRow) string {
+	if row.Status == "approved" && row.SendAttempts != nil {
+		return "Queued"
+	}
+	return statusLabels[row.Status]
 }
 
 var cardStatusLabels = map[string]string{

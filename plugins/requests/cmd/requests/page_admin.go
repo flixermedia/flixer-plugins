@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -15,6 +16,14 @@ type editR1 struct {
 	HasKey  bool        `json:"hasKey"`
 }
 
+var kindInfo = map[string]struct{ purpose, detail, example string }{
+	"radarr": {"Movies", "Radarr finds, downloads and organises movies. Approved movie requests are added to it.", "https://radarr.example.com"},
+	"sonarr": {"TV series", "Sonarr does the same for TV series. Approved series and seasons are added to it.", "https://sonarr.example.com"},
+	"lidarr": {"Music", "Lidarr manages music. Approved albums are added to it.", "https://lidarr.example.com"},
+}
+
+func addNav(kind string) nav { return nav{Query: map[string]string{"tab": "services", "add": kind}} }
+
 func servicesContent(c *Ctx, q map[string]string) []node {
 	if !c.isAdmin() {
 		return []node{alert("Only administrators can manage servers.", "danger")}
@@ -22,49 +31,82 @@ func servicesContent(c *Ctx, q map[string]string) []node {
 	if id := q["edit"]; id != "" && uuidPattern.MatchString(id) {
 		return serviceEditContent(c, strings.ToLower(id))
 	}
+	if kind := q["add"]; contains(serviceKinds, kind) {
+		return serviceAddContent(kind)
+	}
 	services := Round(c, []hostCall{dbFind(tableServices, nil, []order{{"kind", "asc"}, {"name", "asc"}}, 200, 0)},
 		func(rs []hostResult) serviceListR1 { return serviceListR1{Services: rowsOf[serviceRow](rs[0])} }).Services
 
-	rows := make([]node, 0, len(services))
+	if len(services) == 0 {
+		cards := make([]node, 0, len(serviceKinds))
+		for _, kind := range []string{"radarr", "sonarr", "lidarr"} {
+			info := kindInfo[kind]
+			to := addNav(kind)
+			cards = append(cards, cardNode("Add "+kindLabel(kind), info.purpose, nil, nil, &to,
+				[]node{textNode(info.detail, "muted")},
+				[]node{link("Add "+kindLabel(kind), to)}))
+		}
+		return []node{
+			section("Connect a server", "Requests are fulfilled by Radarr, Sonarr and Lidarr. Connect at least one to get started; you only need the kinds you want people to request.", nil,
+				grid(240, cards),
+				textNode("You will need the server's https address and its API key (in its Settings, General).", "muted")),
+		}
+	}
+
+	cards := make([]node, 0, len(services))
+	have := map[string]bool{}
 	for _, s := range services {
-		badges := []node{badge(strings.ToUpper(s.Kind[:1])+s.Kind[1:], "info")}
+		have[s.Kind] = true
+		badges := []badgeSpec{{Text: kindLabel(s.Kind), Tone: "info"}}
 		switch {
 		case !s.complete():
-			badges = append(badges, badge("Needs setup", "warning"))
+			badges = append(badges, badgeSpec{Text: "Needs setup", Tone: "warning"})
 		case s.Enabled:
-			badges = append(badges, badge("Enabled", "success"))
+			badges = append(badges, badgeSpec{Text: "Enabled", Tone: "success"})
 		default:
-			badges = append(badges, badge("Disabled", "default"))
+			badges = append(badges, badgeSpec{Text: "Disabled", Tone: "default"})
 		}
 		if s.IsDefault {
-			badges = append(badges, badge("Default", "default"))
+			badges = append(badges, badgeSpec{Text: "Default", Tone: "default"})
 		}
 		id := map[string]any{"id": s.ID}
-		rows = append(rows, tableRow(s.ID, map[string]any{
-			"name":   s.Name,
-			"url":    s.URL,
-			"status": row(1, badges...),
-			"actions": row(2,
-				link("Edit", nav{Query: map[string]string{"tab": "services", "edit": s.ID}}),
-				button("Test", action{Op: "service-test", Body: id}, "quiet"),
-				button("Delete", action{Op: "service-delete", Body: id, Reload: true, Confirm: "Delete this server? Existing requests are kept."}, "danger"),
-			),
+		edit := nav{Query: map[string]string{"tab": "services", "edit": s.ID}}
+		body := []node{}
+		if !s.complete() {
+			body = append(body, textNode("Connected, but it is not used until you choose a root folder and quality profile.", "muted"))
+		}
+		cards = append(cards, cardNode(s.Name, s.URL, nil, badges, nil, body, []node{
+			link("Edit", edit),
+			button("Test", action{Op: "service-test", Body: id}, "quiet"),
+			button("Delete", action{Op: "service-delete", Body: id, Reload: true, Confirm: "Delete " + s.Name + "? Existing requests are kept."}, "danger"),
 		}))
 	}
+	adders := []node{}
+	for _, kind := range []string{"radarr", "sonarr", "lidarr"} {
+		adders = append(adders, link("Add "+kindLabel(kind), addNav(kind)))
+	}
+	out := []node{section("Servers", "Requests go to the default enabled server of each kind.", adders, grid(280, cards))}
+	for _, kind := range []string{"radarr", "sonarr", "lidarr"} {
+		if !have[kind] {
+			out = append(out, alert(fmt.Sprintf("No %s server: %s requests are unavailable.", kindLabel(kind), strings.ToLower(kindInfo[kind].purpose)), "info"))
+		}
+	}
+	return out
+}
+
+// serviceAddContent is the first step of connecting a server: it checks the address and key, then continues on the edit page.
+func serviceAddContent(kind string) []node {
+	info := kindInfo[kind]
+	back := link("Back to servers", serversTab())
 	addForm := form([]field{
-		{Name: "kind", Label: "Type", Type: "select", Value: "sonarr", Required: true, Options: []option{
-			{"sonarr", "Sonarr (series)"}, {"radarr", "Radarr (movies)"}, {"lidarr", "Lidarr (music)"},
-		}},
-		{Name: "name", Label: "Name", Type: "text", Required: true},
-		{Name: "url", Label: "Address", Type: "text", Required: true, Placeholder: "https://sonarr.example.com", Help: "Must be a public https:// address."},
-		{Name: "apiKey", Label: "API key", Type: "password", Required: true},
-	}, "Connect", action{Op: "service-save"}, "primary", "column")
+		hidden("kind", kind),
+		{Name: "name", Label: "Name", Type: "text", Value: kindLabel(kind), Required: true, Help: "How this server is called in Flixer."},
+		{Name: "url", Label: "Address", Type: "text", Required: true, Placeholder: info.example, Help: "A public https:// address, without a path."},
+		{Name: "apiKey", Label: "API key", Type: "password", Required: true, Help: "Found in " + kindLabel(kind) + " under Settings, General, Security."},
+	}, "Test connection and continue", action{Op: "service-save"}, "primary", "column")
 	return []node{
-		heading("Servers", 2),
-		tableNode([]column2{{"name", "Name"}, {"url", "Address"}, {"status", "Status"}, {"actions", ""}}, rows, "No servers yet."),
-		heading("Add a server", 3),
-		textNode("Requests are sent to the default enabled server of each kind. After connecting you choose the quality profile and root folder.", "muted"),
-		addForm,
+		back,
+		section("Add "+kindLabel(kind), info.detail+" Flixer connects with the key first; if that works you choose the quality profile and root folder next.", nil, addForm),
 	}
 }
 
@@ -118,18 +160,26 @@ func serviceEditContent(c *Ctx, id string) []node {
 		result = testResult{Error: "The API key for this server is missing. Enter it again below."}
 	}
 
-	out := []node{back, heading(s.Name, 2)}
+	status := []node{}
 	if !result.OK {
-		out = append(out, alert("Could not load profiles from the server: "+result.Error+" You can still edit the settings by hand.", "warning"))
+		status = append(status, alert("Could not load profiles from the server: "+result.Error+" You can still edit the settings by hand.", "warning"))
 	} else {
-		out = append(out, alert("Connected"+map[bool]string{true: ", version " + result.Version, false: ""}[result.Version != ""]+".", "success"))
+		text := "Connection works"
+		if result.Version != "" {
+			text += ", " + kindLabel(s.Kind) + " " + result.Version
+		}
+		text += fmt.Sprintf(". Found %d root folders and %d quality profiles.", len(result.Roots), len(result.Quality))
+		status = append(status, alert(text, "success"))
+	}
+	if !s.complete() {
+		status = append(status, alert("Choose a root folder and a quality profile, turn the server on and save. Until then it receives no requests.", "info"))
 	}
 
 	fields := []field{
 		hidden("id", s.ID), hidden("kind", s.Kind),
 		{Name: "name", Label: "Name", Type: "text", Value: s.Name, Required: true},
 		{Name: "url", Label: "Address", Type: "text", Value: s.URL, Required: true, Help: "Must be a public https:// address."},
-		{Name: "apiKey", Label: "API key", Type: "password", Help: "Leave empty to keep the saved key."},
+		{Name: "apiKey", Label: "API key", Type: "password", HasValue: r1.HasKey, Help: "Leave empty to keep the saved key."},
 	}
 	if result.OK {
 		roots := []option{}
@@ -180,20 +230,23 @@ func serviceEditContent(c *Ctx, id string) []node {
 			{"announced", "Announced"}, {"inCinemas", "In cinemas"}, {"released", "Released"},
 		}})
 	case "sonarr":
-		fields = append(fields, field{Name: "seasonFolders", Label: "Use season folders", Type: "checkbox", Value: s.SeasonFolders})
+		fields = append(fields, field{Name: "seasonFolders", Label: "Use season folders", Type: "switch", Value: s.SeasonFolders, Help: "Put each season of a series in its own folder."})
 	}
 	tags := make([]string, 0, len(s.Tags))
 	for _, tag := range s.Tags {
 		tags = append(tags, strconv.Itoa(tag))
 	}
 	fields = append(fields,
-		field{Name: "tags", Label: "Tag ids", Type: "text", Value: strings.Join(tags, ","), Help: "Comma separated numbers (optional)."},
-		field{Name: "enabled", Label: "Enabled", Type: "checkbox", Value: s.Enabled},
-		field{Name: "isDefault", Label: "Default server for its type", Type: "checkbox", Value: s.IsDefault},
+		field{Name: "tags", Label: "Tag ids", Type: "text", Value: strings.Join(tags, ","), Help: "Optional. Comma separated numbers of tags to put on everything Flixer adds."},
+		field{Name: "enabled", Label: "Enabled", Type: "switch", Value: s.Enabled, Help: "Only enabled servers receive requests."},
+		field{Name: "isDefault", Label: "Default " + s.Kind + " server", Type: "switch", Value: s.IsDefault, Help: "Requests go here unless an administrator picks another server of the same kind."},
 	)
-	out = append(out, form(fields, "Save", action{Op: "service-save"}, "primary", "column"),
-		button("Test connection", action{Op: "service-test", Body: map[string]any{"id": s.ID}}, "quiet"))
-	return out
+	testButton := button("Test connection", action{Op: "service-test", Body: map[string]any{"id": s.ID}}, "quiet")
+	deleteButton := button("Delete", action{Op: "service-delete", Body: map[string]any{"id": s.ID}, Confirm: "Delete " + s.Name + "? Existing requests are kept."}, "danger")
+	return []node{
+		back,
+		section(s.Name, kindInfo[s.Kind].detail, []node{testButton, deleteButton}, append(status, form(fields, "Save server", action{Op: "service-save"}, "primary", "column"))...),
+	}
 }
 
 func ptr[T any](v T) *T { return &v }
@@ -256,11 +309,8 @@ func usersContent(c *Ctx, q map[string]string) []node {
 			}, "Save", action{Op: "user-limit-save", Reload: true}, "quiet", "inline"),
 		}))
 	}
-	out := []node{
-		heading("Users", 2),
-		textNode("Leave a value on Default to use the global settings. A quota of 0 means unlimited. Administrators have no limits.", "muted"),
-		tableNode([]column2{{"user", "User"}, {"limits", "Limits"}}, rows, "No users."),
-	}
+	out := []node{section("Users", "Leave a value on Default to use the global settings. A quota of 0 means unlimited. Administrators have no limits.", nil,
+		tableNode([]column2{{"user", "User"}, {"limits", "Limits"}}, rows, "No users."))}
 	if r1.Total > pageSize {
 		out = append(out, pagerNode(page, pageSize, r1.Total))
 	}

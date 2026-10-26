@@ -45,7 +45,7 @@ type manifest struct {
 
 func loadManifest(t *testing.T) manifest {
 	t.Helper()
-	raw, err := os.ReadFile("../../1.0.0/plugin.json")
+	raw, err := os.ReadFile("../../1.1.0/plugin.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,11 +68,11 @@ func columnsOf(row any) []string {
 
 func TestManifestMatchesCode(t *testing.T) {
 	m := loadManifest(t)
-	if m.ID != "flixer.requests" || m.Version != "1.0.0" || m.Targets["flixer"].Entry != "backend/plugin.wasm" {
+	if m.ID != "flixer.requests" || m.Version != "1.1.0" || m.Targets["flixer"].Entry != "backend/plugin.wasm" {
 		t.Fatalf("identity: %+v", m)
 	}
 	t.Run("tables match the row types", func(t *testing.T) {
-		rows := map[string]any{tableRequests: requestRow{}, tableServices: serviceRow{}, tableLimits: limitRow{}}
+		rows := map[string]any{tableRequests: requestRow{}, tableServices: serviceRow{}, tableLimits: limitRow{}, tableSettings: settingRow{}}
 		if len(m.Database.Tables) != len(rows) {
 			t.Fatalf("tables = %d", len(m.Database.Tables))
 		}
@@ -132,42 +132,16 @@ func TestManifestMatchesCode(t *testing.T) {
 	})
 }
 
-func TestSettingsSchema(t *testing.T) {
-	raw, err := os.ReadFile("../../1.0.0/settings.schema.json")
-	if err != nil {
-		t.Fatal(err)
+func TestNoSettingsSchema(t *testing.T) {
+	if m := loadManifest(t); m.SettingsSchema != "" {
+		t.Fatalf("settingsSchema = %q; settings live on the plugin page", m.SettingsSchema)
 	}
-	var schema struct {
-		Properties map[string]struct {
-			Type    string `json:"type"`
-			Secret  bool   `json:"x-flixer-secret"`
-			Default any    `json:"default"`
-		} `json:"properties"`
+	if _, err := os.Stat("../../1.1.0/settings.schema.json"); err == nil {
+		t.Fatal("1.1.0 must not ship a settings schema")
 	}
-	if err := json.Unmarshal(raw, &schema); err != nil {
-		t.Fatal(err)
-	}
-	for _, key := range []string{"tmdbApiKey", "discogsToken"} {
-		if p := schema.Properties[key]; !p.Secret || p.Type != "string" {
-			t.Errorf("%s must be a secret string", key)
-		}
-	}
-	for _, key := range []string{"moviesEnabled", "tvEnabled", "musicEnabled", "defaultCanRequest", "autoApprove", "quotaLimit", "quotaDays", "notifyAdmins", "notifyUsers", "language"} {
-		if _, ok := schema.Properties[key]; !ok {
-			t.Errorf("missing %s", key)
-		}
-	}
-	// The defaults the schema advertises must be what the code assumes.
 	cfg := parseSettings(map[string]any{})
-	want := map[string]any{
-		"moviesEnabled": cfg.Movies, "tvEnabled": cfg.TV, "musicEnabled": cfg.Music, "defaultCanRequest": cfg.DefaultCanRequest,
-		"autoApprove": cfg.AutoApprove, "notifyAdmins": cfg.NotifyAdmins, "notifyUsers": cfg.NotifyUsers,
-		"quotaLimit": float64(cfg.QuotaLimit), "quotaDays": float64(cfg.QuotaDays), "language": cfg.Language,
-	}
-	for key, value := range want {
-		if schema.Properties[key].Default != value {
-			t.Errorf("%s default = %v, code assumes %v", key, schema.Properties[key].Default, value)
-		}
+	if !cfg.Movies || !cfg.TV || !cfg.Music || !cfg.DefaultCanRequest || cfg.AutoApprove || !cfg.NotifyAdmins || !cfg.NotifyUsers || cfg.QuotaLimit != 0 || cfg.QuotaDays != 7 || cfg.Language != "en" {
+		t.Fatalf("defaults = %+v", cfg)
 	}
 }
 

@@ -47,20 +47,8 @@ func TestRequestCreate(t *testing.T) {
 		{name: "user request waits for approval", role: "user", uid: userID, body: movie, wantStatus: "pending", wantNotify: 1},
 		{name: "no admin notification when switched off", role: "user", uid: userID, body: movie, settings: map[string]any{"notifyAdmins": false}, wantStatus: "pending"},
 		{name: "auto approve sends to radarr", role: "user", uid: userID, body: movieHint, settings: map[string]any{"autoApprove": true}, wantStatus: "approved", wantNotify: 1, wantPosts: 1},
-		{name: "auto approve without matching hint stays pending", role: "user", uid: userID, body: movie, settings: map[string]any{"autoApprove": true}, wantStatus: "pending", wantNotify: 1},
-		{name: "admin requests are approved", role: "admin", uid: adminID, body: movieHint, wantStatus: "approved", wantNotify: 1, wantPosts: 1},
-		{
-			name: "radarr failure is recorded", role: "admin", uid: adminID, body: movieHint, wantStatus: "failed", wantNotify: 0,
-			prepare: func(h *fakeHost) {
-				inner := h.http
-				h.http = func(m, u string, hd map[string]string, b string) (int, string) {
-					if m == "POST" {
-						return 500, `{"message":"boom"}`
-					}
-					return inner(m, u, hd, b)
-				}
-			},
-		},
+		{name: "auto approve uses the default server", role: "user", uid: userID, body: movie, settings: map[string]any{"autoApprove": true}, wantStatus: "approved", wantNotify: 1, wantPosts: 1},
+		{name: "admin requests are approved and sent", role: "admin", uid: adminID, body: movieHint, wantStatus: "approved", wantNotify: 1, wantPosts: 1},
 		{name: "not allowed by default", role: "user", uid: userID, body: movie, settings: map[string]any{"defaultCanRequest": false}, wantError: "You are not allowed to make requests."},
 		{name: "movies turned off", role: "user", uid: userID, body: movie, settings: map[string]any{"moviesEnabled": false}, wantError: "This kind of request is turned off."},
 		{
@@ -224,19 +212,64 @@ func TestRequestSeries(t *testing.T) {
 	}
 }
 
-func TestRequestSeriesAutoApproveDispatch(t *testing.T) {
+func TestRequestSeriesAutoApproveIsSent(t *testing.T) {
 	h := fixture(t)
 	body := map[string]any{"type": "tv", "externalId": "1399", "serviceId": sonarrID, "seasons": []any{1}}
 	res := h.drive("request", "user", userID, body, withSettings(map[string]any{"autoApprove": true}))
 	if resultError(res) != "" {
 		t.Fatal(resultError(res))
 	}
-	if statusOfOnly(t, h) != "approved" {
-		t.Fatalf("status = %v", h.rows(tableRequests)[0])
+	row := h.rows(tableRequests)[0]
+	if row["status"] != "approved" || row["send_attempts"] != float64(1) && row["send_attempts"] != 1 {
+		t.Fatalf("row = %v", row)
+	}
+	if tvdb := row["tvdb_id"]; tvdb != float64(121361) && tvdb != 121361 {
+		t.Fatalf("tvdb_id = %v", tvdb)
+	}
+	if posts := countPosts(h); posts != 1 {
+		t.Fatalf("posts = %d: %v", posts, h.httpLog)
 	}
 	if res.Rounds > maxRounds {
 		t.Fatalf("rounds = %d", res.Rounds)
 	}
+}
+
+func countPosts(h *fakeHost) int {
+	posts := 0
+	for _, line := range h.httpLog {
+		if strings.HasPrefix(line, "POST ") {
+			posts++
+		}
+	}
+	return posts
+}
+
+func TestRequestAutoApproveQueuesWithoutServer(t *testing.T) {
+	t.Run("missing server key: failed with a clear reason", func(t *testing.T) {
+		h := fixture(t)
+		delete(h.secrets, secretName(radarrID))
+		res := h.drive("request", "admin", adminID, map[string]any{"type": "movie", "externalId": "603"}, withSettings(nil))
+		row := h.rows(tableRequests)[0]
+		if resultError(res) != "" || row["status"] != "failed" || !strings.Contains(row["error"].(string), "API key") {
+			t.Fatalf("row = %v", row)
+		}
+	})
+	t.Run("series without a tvdb id is queued for the sync", func(t *testing.T) {
+		h := fixture(t)
+		fakeNoTVDB = true
+		t.Cleanup(func() { fakeNoTVDB = false })
+		res := h.drive("request", "admin", adminID, map[string]any{"type": "tv", "externalId": "1399"}, withSettings(nil))
+		if resultError(res) != "" {
+			t.Fatal(resultError(res))
+		}
+		row := h.rows(tableRequests)[0]
+		if row["status"] != "approved" || row["send_attempts"] != float64(0) && row["send_attempts"] != 0 {
+			t.Fatalf("row = %v", row)
+		}
+		if countPosts(h) != 0 {
+			t.Fatal("nothing should be sent without a tvdb id")
+		}
+	})
 }
 
 func TestRequestNeverLeaksSecrets(t *testing.T) {
@@ -356,9 +389,26 @@ func TestApproveFailureMarksRequestFailed(t *testing.T) {
 	}
 }
 
-func TestApproveSeries(t *testing.T) {
+func TestApproveSeriesBefore110(t *testing.T) {
 	h := fixture(t)
 	h.seed(tableRequests, requestRow{ID: radarrID, UserID: userID, Type: "tv", Source: "tmdb", ExternalID: "1399", Title: "Game of Thrones", Status: "pending", Seasons: []int{1}})
+	body := map[string]any{"id": radarrID, "type": "tv", "externalId": "1399", "serviceId": sonarrID}
+	res := h.drive("approve", "admin", adminID, body, withSettings(nil))
+	row := h.rows(tableRequests)[0]
+	if resultError(res) != "" || res.Rounds > maxRounds {
+		t.Fatalf("approve: %v rounds=%d", resultError(res), res.Rounds)
+	}
+	if row["status"] != "approved" || (row["tvdb_id"] != float64(121361) && row["tvdb_id"] != 121361) {
+		t.Fatalf("row = %v, toast = %q", row, toastText(res))
+	}
+	if countPosts(h) != 1 {
+		t.Fatalf("the first click must send the show: %v", h.httpLog)
+	}
+}
+
+func TestApproveSeries(t *testing.T) {
+	h := fixture(t)
+	h.seed(tableRequests, requestRow{ID: radarrID, UserID: userID, Type: "tv", Source: "tmdb", ExternalID: "1399", Title: "Game of Thrones", Status: "pending", Seasons: []int{1}, TVDB: ptr(121361)})
 	body := map[string]any{"id": radarrID, "type": "tv", "externalId": "1399", "serviceId": sonarrID}
 	res := h.drive("approve", "admin", adminID, body, withSettings(nil))
 	if resultError(res) != "" {
@@ -425,7 +475,7 @@ func TestSync(t *testing.T) {
 			h.library[id] = "item"
 		}
 		res := h.drive("sync", "system", "", nil, withSettings(nil))
-		if res.Result["changed"] != float64(syncNotify) {
+		if res.Result["changed"] != float64(7) {
 			t.Fatalf("result = %v", res.Result)
 		}
 	})
@@ -449,4 +499,93 @@ func newTestID(i int) string {
 func itoa(i int) string {
 	b, _ := json.Marshal(i)
 	return string(b)
+}
+
+func rowOf(t *testing.T, h *fakeHost, id string) map[string]any {
+	t.Helper()
+	for _, row := range h.rows(tableRequests) {
+		if row["id"] == id {
+			return row
+		}
+	}
+	t.Fatalf("no request %s", id)
+	return nil
+}
+
+func isInt(value any, want int) bool { return value == float64(want) || value == want }
+
+func TestSyncSendsQueuedRequests(t *testing.T) {
+	queued := func(h *fakeHost, attempts *int) {
+		h.seed(tableRequests, requestRow{ID: radarrID, UserID: userID, Type: "movie", Source: "tmdb", ExternalID: "603", Title: "The Matrix", Status: "approved", SendAttempts: attempts, CreatedAt: "2026-03-01T00:00:00.000Z"})
+	}
+	t.Run("a queued request is sent, then confirmed on the next run", func(t *testing.T) {
+		h := fixture(t)
+		queued(h, ptr(0))
+		res := h.drive("sync", "system", "", nil, withSettings(nil))
+		if res.Err != nil || resultError(res) != "" || res.Rounds > maxRounds {
+			t.Fatalf("sync: %v %v rounds=%d", res.Err, resultError(res), res.Rounds)
+		}
+		row := rowOf(t, h, radarrID)
+		if countPosts(h) != 1 || row["status"] != "approved" || !isInt(row["send_attempts"], 1) {
+			t.Fatalf("row = %v, http = %v", row, h.httpLog)
+		}
+		fakeMovieExists = true
+		t.Cleanup(func() { fakeMovieExists = false })
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		row = rowOf(t, h, radarrID)
+		if countPosts(h) != 1 || row["status"] != "approved" || row["send_attempts"] != nil {
+			t.Fatalf("not confirmed: %v, http = %v", row, h.httpLog)
+		}
+	})
+	t.Run("an unconfirmed send is repeated and finally fails", func(t *testing.T) {
+		h := fixture(t)
+		queued(h, ptr(1))
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		if row := rowOf(t, h, radarrID); !isInt(row["send_attempts"], 2) || countPosts(h) != 1 {
+			t.Fatalf("retry: %v", row)
+		}
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		row := rowOf(t, h, radarrID)
+		if row["status"] != "failed" || row["send_attempts"] != nil || !strings.Contains(row["error"].(string), "did not confirm") {
+			t.Fatalf("row = %v", row)
+		}
+	})
+	t.Run("a show without a tvdb id gets one and is sent", func(t *testing.T) {
+		h := fixture(t)
+		h.seed(tableRequests, requestRow{ID: sonarrID, UserID: userID, Type: "tv", Source: "tmdb", ExternalID: "1399", Title: "Game of Thrones", Status: "approved", SendAttempts: ptr(0), Seasons: []int{1}, CreatedAt: "2026-03-01T00:00:00.000Z"})
+		res := h.drive("sync", "system", "", nil, withSettings(nil))
+		row := rowOf(t, h, sonarrID)
+		if res.Err != nil || !isInt(row["tvdb_id"], 121361) || !isInt(row["send_attempts"], 1) || countPosts(h) != 1 {
+			t.Fatalf("row = %v, http = %v, err = %v", row, h.httpLog, res.Err)
+		}
+	})
+	t.Run("a missing server key fails the request", func(t *testing.T) {
+		h := fixture(t)
+		queued(h, ptr(0))
+		delete(h.secrets, secretName(radarrID))
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		row := rowOf(t, h, radarrID)
+		if row["status"] != "failed" || !strings.Contains(row["error"].(string), "API key") {
+			t.Fatalf("row = %v", row)
+		}
+	})
+	t.Run("a queued title already in the library becomes available", func(t *testing.T) {
+		h := fixture(t)
+		queued(h, ptr(0))
+		h.library[radarrID] = "item-1"
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		row := rowOf(t, h, radarrID)
+		if row["status"] != "available" || countPosts(h) != 0 {
+			t.Fatalf("row = %v", row)
+		}
+	})
+	t.Run("requests approved before 1.1.0 are left alone", func(t *testing.T) {
+		h := fixture(t)
+		queued(h, nil)
+		h.drive("sync", "system", "", nil, withSettings(nil))
+		if countPosts(h) != 0 || rowOf(t, h, radarrID)["status"] != "approved" {
+			t.Fatal("sent requests must not be sent again")
+		}
+	})
 }
