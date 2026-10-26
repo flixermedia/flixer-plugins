@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "flixer.skipmedb",
     "name": "SkipMe.db",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "SkipMe.db segment integration for Flixer: crowd-sourced intro, recap, credits and preview timestamps.",
     "author": "Flixer",
     "license": "MIT",
@@ -23,15 +23,5 @@
         "media.segments.lookup",
         "network.http.database.skipme.deno.net"
     ],
-    "settingsSchema": "settings.schema.json",
-    "ui": {
-        "adminPages": [
-            {
-                "id": "skipmedb",
-                "title": "SkipMe.db",
-                "description": "Crowd-sourced intro, recap, credits and preview timestamps.",
-                "section": "providers"
-            }
-        ]
-    }
+    "settingsSchema": "settings.schema.json"
 }

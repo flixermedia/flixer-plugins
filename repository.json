@@ -68,11 +68,11 @@
                     "size": 1118644
                 },
                 {
-                    "version": "1.1.0",
-                    "manifest": "plugins/skipmedb/1.1.0/plugin.json",
-                    "package": "plugins/skipmedb/1.1.0/package.tar.gz",
-                    "sha256": "612ae49ef9e54f0d6d92f570f57ca42ee5d0cce5e273140c3866b9de76c3bd4c",
-                    "size": 1118922
+                    "version": "1.1.1",
+                    "manifest": "plugins/skipmedb/1.1.1/plugin.json",
+                    "package": "plugins/skipmedb/1.1.1/package.tar.gz",
+                    "sha256": "623634b8e6f0c680eac688562f77bb82bcbae57897a46a0aeba7cd4b0895def8",
+                    "size": 1118773
                 }
             ]
         }
