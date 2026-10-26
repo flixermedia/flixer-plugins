@@ -1,0 +1,74 @@
+{
+    "type": "object",
+    "properties": {
+        "tmdbApiKey": {
+            "type": "string",
+            "title": "TMDB API key",
+            "description": "Read access token or API key from themoviedb.org. Needed for movies and series.",
+            "x-flixer-secret": true
+        },
+        "discogsToken": {
+            "type": "string",
+            "title": "Discogs token",
+            "description": "Personal access token from discogs.com. Needed for albums.",
+            "x-flixer-secret": true
+        },
+        "language": {
+            "type": "string",
+            "title": "Metadata language",
+            "description": "Language of titles and descriptions from TMDB, for example en or de-DE.",
+            "default": "en"
+        },
+        "moviesEnabled": {
+            "type": "boolean",
+            "title": "Allow movie requests",
+            "default": true
+        },
+        "tvEnabled": {
+            "type": "boolean",
+            "title": "Allow series requests",
+            "default": true
+        },
+        "musicEnabled": {
+            "type": "boolean",
+            "title": "Allow album requests",
+            "default": true
+        },
+        "defaultCanRequest": {
+            "type": "boolean",
+            "title": "Users can make requests by default",
+            "default": true
+        },
+        "autoApprove": {
+            "type": "boolean",
+            "title": "Approve requests automatically",
+            "description": "Requests from users go straight to Sonarr, Radarr or Lidarr. Can be changed per user.",
+            "default": false
+        },
+        "quotaLimit": {
+            "type": "integer",
+            "title": "Requests allowed per user",
+            "description": "0 means unlimited.",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+        },
+        "quotaDays": {
+            "type": "integer",
+            "title": "Quota period in days",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 7
+        },
+        "notifyAdmins": {
+            "type": "boolean",
+            "title": "Notify administrators of new requests",
+            "default": true
+        },
+        "notifyUsers": {
+            "type": "boolean",
+            "title": "Notify users about their requests",
+            "default": true
+        }
+    }
+}

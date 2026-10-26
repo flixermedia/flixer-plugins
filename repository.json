@@ -75,6 +75,56 @@
                     "size": 1118773
                 }
             ]
+        },
+        {
+            "id": "flixer.requests",
+            "name": "Requests",
+            "description": "Discover movies, series and albums, request them, and send approved requests to Sonarr, Radarr and Lidarr.",
+            "author": "Flixer",
+            "capabilities": [
+                "api.routes",
+                "schedule",
+                "ui.pages",
+                "network.http",
+                "database.tables",
+                "secrets",
+                "users",
+                "library",
+                "notifications"
+            ],
+            "permissions": [
+                "api.routes.page",
+                "api.routes.request",
+                "api.routes.cancel",
+                "api.routes.approve",
+                "api.routes.retry",
+                "api.routes.decline",
+                "api.routes.serviceSave",
+                "api.routes.serviceDelete",
+                "api.routes.serviceTest",
+                "api.routes.userLimitSave",
+                "api.routes.sync",
+                "database.tables",
+                "secrets.manage",
+                "users.read",
+                "library.read",
+                "notifications.send",
+                "schedule.run",
+                "settings.read",
+                "network.http.any"
+            ],
+            "targets": [
+                "flixer"
+            ],
+            "versions": [
+                {
+                    "version": "1.0.0",
+                    "manifest": "plugins/requests/1.0.0/plugin.json",
+                    "package": "plugins/requests/1.0.0/package.tar.gz",
+                    "sha256": "61ca8e0295c13b3b4e8543fd3defd4b780fd4228eedfb45b09b37b7d676fc7fb",
+                    "size": 1409780
+                }
+            ]
         }
     ]
 }
