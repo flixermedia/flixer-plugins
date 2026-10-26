@@ -66,6 +66,13 @@
                     "package": "plugins/skipmedb/1.0.0/package.tar.gz",
                     "sha256": "86b6a5bcac8a920205c3a4224c8f442c360225f556877288c1eea5435f11540b",
                     "size": 1118644
+                },
+                {
+                    "version": "1.1.0",
+                    "manifest": "plugins/skipmedb/1.1.0/plugin.json",
+                    "package": "plugins/skipmedb/1.1.0/package.tar.gz",
+                    "sha256": "612ae49ef9e54f0d6d92f570f57ca42ee5d0cce5e273140c3866b9de76c3bd4c",
+                    "size": 1118922
                 }
             ]
         }

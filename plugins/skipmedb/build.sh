@@ -13,7 +13,10 @@ cp "$plugin/LICENSE" "$release/LICENSE"
 archive="$release/package.tar.gz"
 tarFile="$release/package.tar"
 trap 'rm -f "$tarFile"' EXIT
-tar -C "$release" --sort=name --mtime='UTC 2026-01-01' --owner=0 --group=0 --numeric-owner -cf "$tarFile" LICENSE plugin.json backend/plugin.wasm
+files="LICENSE plugin.json backend/plugin.wasm"
+if [ -f "$release/settings.schema.json" ]; then files="$files settings.schema.json"; fi
+# shellcheck disable=SC2086
+tar -C "$release" --sort=name --mtime='UTC 2026-01-01' --owner=0 --group=0 --numeric-owner -cf "$tarFile" $files
 gzip -n -c "$tarFile" > "$archive"
 rm -f "$tarFile"
 trap - EXIT

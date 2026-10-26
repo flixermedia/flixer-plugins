@@ -1,0 +1,37 @@
+{
+    "manifestVersion": 1,
+    "id": "flixer.skipmedb",
+    "name": "SkipMe.db",
+    "version": "1.1.0",
+    "description": "SkipMe.db segment integration for Flixer: crowd-sourced intro, recap, credits and preview timestamps.",
+    "author": "Flixer",
+    "license": "MIT",
+    "homepage": "https://github.com/flixermedia/flixer-plugins/tree/main/plugins/skipmedb",
+    "compatibility": {
+        "pluginApi": "^1.0.0"
+    },
+    "targets": {
+        "flixer": {
+            "entry": "backend/plugin.wasm"
+        }
+    },
+    "capabilities": [
+        "media.segments",
+        "network.http"
+    ],
+    "permissions": [
+        "media.segments.lookup",
+        "network.http.database.skipme.deno.net"
+    ],
+    "settingsSchema": "settings.schema.json",
+    "ui": {
+        "adminPages": [
+            {
+                "id": "skipmedb",
+                "title": "SkipMe.db",
+                "description": "Crowd-sourced intro, recap, credits and preview timestamps.",
+                "section": "providers"
+            }
+        ]
+    }
+}

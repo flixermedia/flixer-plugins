@@ -1,0 +1,12 @@
+{
+    "type": "object",
+    "properties": {
+        "apiUrl": {
+            "type": "string",
+            "format": "uri",
+            "title": "SkipMe.db API URL",
+            "description": "Base URL of the SkipMe.db API. Leave empty to turn lookups off. The plugin may only contact hosts it has been granted network permission for.",
+            "default": "https://database.skipme.deno.net/v3"
+        }
+    }
+}
