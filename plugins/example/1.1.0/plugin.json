@@ -1,0 +1,32 @@
+{
+    "manifestVersion": 1,
+    "id": "flixer.example",
+    "name": "Flixer Example Plugin",
+    "version": "1.1.0",
+    "description": "Demonstrates an authenticated WASI backend route, permission-scoped persistent storage and permissioned host HTTP calls.",
+    "author": "Flixer",
+    "license": "MIT",
+    "homepage": "https://github.com/flixermedia/flixer-plugins/tree/main/plugins/example",
+    "compatibility": {
+        "pluginApi": "^1.0.0"
+    },
+    "targets": {
+        "flixer": {
+            "entry": "backend/plugin.wasm"
+        }
+    },
+    "capabilities": [
+        "api.routes",
+        "backend.storage",
+        "network.http"
+    ],
+    "permissions": [
+        "api.routes.hello",
+        "api.routes.fetch",
+        "network.http.example.com",
+        "storage.plugin.read",
+        "storage.plugin.write",
+        "storage.user.read",
+        "storage.user.write"
+    ]
+}

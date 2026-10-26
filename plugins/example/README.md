@@ -6,6 +6,7 @@
 
 - An authenticated `POST /api/plugins/flixer.example/hello` route.
 - An operation-specific `api.routes.hello` permission.
+- A `fetch` operation (1.1.0) that uses the host-call protocol to perform an HTTPS GET of `https://example.com/`, gated by `api.routes.fetch` and `network.http.example.com`.
 - Plugin-wide persistent storage using the `storage.plugin.*` permissions.
 - Per-user isolated persistent storage using the `storage.user.*` permissions.
 - A WASI module compiled for Go's `wasip1/wasm` target.

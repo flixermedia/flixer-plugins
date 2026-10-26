@@ -3,7 +3,8 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 plugin="$root/plugins/example"
-release="$plugin/1.0.0"
+version="${1:-1.1.0}"
+release="$plugin/$version"
 
 mkdir -p "$release/backend"
 cp "$plugin/LICENSE" "$release/LICENSE"
@@ -19,16 +20,16 @@ trap - EXIT
 
 digest=$(sha256sum "$archive" | cut -d ' ' -f 1)
 size=$(wc -c < "$archive" | tr -d ' ')
-REPOSITORY="$root/repository.json" DIGEST="$digest" SIZE="$size" node --input-type=module <<'NODE'
+REPOSITORY="$root/repository.json" VERSION="$version" DIGEST="$digest" SIZE="$size" node --input-type=module <<'NODE'
 import { readFile, writeFile } from "node:fs/promises";
 const path = process.env.REPOSITORY;
 const repository = JSON.parse(await readFile(path, "utf8"));
 const release = repository.plugins
   .find((plugin) => plugin.id === "flixer.example")
-  ?.versions.find((version) => version.version === "1.0.0");
-if (!release) throw new Error("flixer.example 1.0.0 is missing from repository.json");
+  ?.versions.find((version) => version.version === process.env.VERSION);
+if (!release) throw new Error(`flixer.example ${process.env.VERSION} is missing from repository.json`);
 if (/^[a-f0-9]{64}$/.test(release.sha256) && release.sha256 !== process.env.DIGEST) {
-  throw new Error("The 1.0.0 artifact is immutable; bump the example plugin version before publishing changes");
+  throw new Error(`The ${process.env.VERSION} artifact is immutable; bump the example plugin version before publishing changes`);
 }
 release.sha256 = process.env.DIGEST;
 release.size = Number(process.env.SIZE);

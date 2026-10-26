@@ -23,7 +23,40 @@ type requestEnvelope struct {
 			Name string `json:"name"`
 		} `json:"body"`
 	} `json:"request"`
-	Storage map[string]map[string]json.RawMessage `json:"storage"`
+	Storage      map[string]map[string]json.RawMessage `json:"storage"`
+	Continuation json.RawMessage                       `json:"continuation"`
+	HostResults  []hostResult                          `json:"hostResults"`
+}
+
+type hostResult struct {
+	ID     string `json:"id"`
+	OK     bool   `json:"ok"`
+	Status int    `json:"status"`
+	Body   string `json:"body"`
+	Error  string `json:"error"`
+}
+
+type hostCall struct {
+	ID  string `json:"id"`
+	Op  string `json:"op"`
+	URL string `json:"url"`
+}
+
+type hostCallResponse struct {
+	HostCalls    []hostCall `json:"hostCalls"`
+	Continuation any        `json:"continuation"`
+}
+
+type fetchResult struct {
+	Operation string `json:"operation"`
+	OK        bool   `json:"ok"`
+	Status    int    `json:"status"`
+	Bytes     int    `json:"bytes"`
+	Error     string `json:"error,omitempty"`
+}
+
+type fetchResponse struct {
+	Result fetchResult `json:"result"`
 }
 
 type response struct {
@@ -65,11 +98,15 @@ func run(input io.Reader, output io.Writer) error {
 	if request.APIVersion != 1 {
 		return errors.New("unsupported plugin API version")
 	}
-	if request.Operation != "hello" {
-		return errors.New("unsupported operation")
-	}
 	if request.User.ID == "" {
 		return errors.New("authenticated user is missing")
+	}
+	switch request.Operation {
+	case "hello":
+	case "fetch":
+		return runFetch(request, output)
+	default:
+		return errors.New("unsupported operation")
 	}
 
 	pluginCount, err := nextCount(request.Storage["plugin"], "invocations")
@@ -122,4 +159,23 @@ func nextCount(storage map[string]json.RawMessage, key string) (int, error) {
 		return 0, errors.New("stored counter reached its maximum")
 	}
 	return current + 1, nil
+}
+
+// runFetch shows the host-call protocol: ask the host for an HTTPS GET, then resume with its result.
+func runFetch(request requestEnvelope, output io.Writer) error {
+	encoder := json.NewEncoder(output)
+	if len(request.HostResults) == 0 {
+		return encoder.Encode(hostCallResponse{
+			HostCalls:    []hostCall{{ID: "page", Op: "http.get", URL: "https://example.com/"}},
+			Continuation: map[string]int{"stage": 1},
+		})
+	}
+	page := request.HostResults[0]
+	return encoder.Encode(fetchResponse{Result: fetchResult{
+		Operation: request.Operation,
+		OK:        page.OK,
+		Status:    page.Status,
+		Bytes:     len(page.Body),
+		Error:     page.Error,
+	}})
 }

@@ -7,14 +7,17 @@
         {
             "id": "flixer.example",
             "name": "Flixer Example Plugin",
-            "description": "Demonstrates an authenticated WASI backend route and permission-scoped persistent storage.",
+            "description": "Demonstrates an authenticated WASI backend route, permission-scoped persistent storage and permissioned host HTTP calls.",
             "author": "Flixer",
             "capabilities": [
                 "api.routes",
-                "backend.storage"
+                "backend.storage",
+                "network.http"
             ],
             "permissions": [
                 "api.routes.hello",
+                "api.routes.fetch",
+                "network.http.example.com",
                 "storage.plugin.read",
                 "storage.plugin.write",
                 "storage.user.read",
@@ -30,6 +33,13 @@
                     "package": "plugins/example/1.0.0/package.tar.gz",
                     "sha256": "923d0616bfa1cceeadd4e8a17eb208a2f357ba0aef6b4f4d4d7e3b36420870d6",
                     "size": 939190
+                },
+                {
+                    "version": "1.1.0",
+                    "manifest": "plugins/example/1.1.0/plugin.json",
+                    "package": "plugins/example/1.1.0/package.tar.gz",
+                    "sha256": "8f77550c9e7febda7fbead41b68c5597657901ccdc8bf8669ef60a76581abfe6",
+                    "size": 941153
                 }
             ]
         }
