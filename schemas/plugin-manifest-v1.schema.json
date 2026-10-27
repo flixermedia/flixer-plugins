@@ -1,6 +1,6 @@
 {
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
-	"$id": "https://flixer.media/schemas/plugin-manifest-v1.json",
+	"$id": "https://flixer.dev/schemas/plugin-manifest-v1.json",
 	"type": "object",
 	"additionalProperties": false,
 	"required": [
@@ -17,28 +17,77 @@
 		"permissions"
 	],
 	"properties": {
-		"manifestVersion": { "const": 1 },
-		"id": { "type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$", "maxLength": 128 },
-		"name": { "type": "string", "minLength": 1, "maxLength": 100 },
+		"manifestVersion": {
+			"const": 1
+		},
+		"id": {
+			"type": "string",
+			"pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+			"maxLength": 128
+		},
+		"name": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 100
+		},
 		"version": {
 			"type": "string",
 			"pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
 		},
-		"description": { "type": "string", "minLength": 1, "maxLength": 1000 },
-		"author": { "type": "string", "minLength": 1, "maxLength": 200 },
-		"license": { "type": "string", "minLength": 1, "maxLength": 100 },
-		"homepage": { "type": "string", "maxLength": 2048 },
-		"icon": { "$ref": "#/$defs/packagePath" },
+		"description": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 1000
+		},
+		"author": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 200
+		},
+		"license": {
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 100
+		},
+		"homepage": {
+			"type": "string",
+			"maxLength": 2048
+		},
+		"icon": {
+			"$ref": "#/$defs/packagePath"
+		},
 		"compatibility": {
 			"type": "object",
 			"additionalProperties": false,
-			"required": ["pluginApi"],
+			"required": [
+				"pluginApi"
+			],
 			"properties": {
-				"pluginApi": { "type": "string", "minLength": 1, "maxLength": 128 },
-				"flixer": { "type": "string", "minLength": 1, "maxLength": 128 },
-				"flixer-indexer": { "type": "string", "minLength": 1, "maxLength": 128 },
-				"flixer-streamer": { "type": "string", "minLength": 1, "maxLength": 128 },
-				"flixer-web": { "type": "string", "minLength": 1, "maxLength": 128 }
+				"pluginApi": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 128
+				},
+				"flixer": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 128
+				},
+				"flixer-indexer": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 128
+				},
+				"flixer-streamer": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 128
+				},
+				"flixer-web": {
+					"type": "string",
+					"minLength": 1,
+					"maxLength": 128
+				}
 			}
 		},
 		"targets": {
@@ -46,37 +95,65 @@
 			"minProperties": 1,
 			"additionalProperties": false,
 			"properties": {
-				"flixer": { "$ref": "#/$defs/target" },
-				"flixer-indexer": { "$ref": "#/$defs/target" },
-				"flixer-streamer": { "$ref": "#/$defs/target" },
-				"flixer-web": { "$ref": "#/$defs/target" }
+				"flixer": {
+					"$ref": "#/$defs/target"
+				},
+				"flixer-indexer": {
+					"$ref": "#/$defs/target"
+				},
+				"flixer-streamer": {
+					"$ref": "#/$defs/target"
+				},
+				"flixer-web": {
+					"$ref": "#/$defs/target"
+				}
 			}
 		},
 		"capabilities": {
 			"type": "array",
 			"minItems": 1,
 			"uniqueItems": true,
-			"items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$", "maxLength": 128 }
+			"items": {
+				"type": "string",
+				"pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$",
+				"maxLength": 128
+			}
 		},
 		"permissions": {
 			"type": "array",
 			"uniqueItems": true,
-			"items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$", "maxLength": 128 }
+			"items": {
+				"type": "string",
+				"pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$",
+				"maxLength": 128
+			}
 		},
-		"dependencies": { "$ref": "#/$defs/dependencies" },
-		"optionalDependencies": { "$ref": "#/$defs/dependencies" },
-		"settingsSchema": { "$ref": "#/$defs/packagePath" },
+		"dependencies": {
+			"$ref": "#/$defs/dependencies"
+		},
+		"optionalDependencies": {
+			"$ref": "#/$defs/dependencies"
+		},
+		"settingsSchema": {
+			"$ref": "#/$defs/packagePath"
+		},
 		"database": {
 			"type": "object",
 			"additionalProperties": false,
-			"required": ["tables"],
+			"required": [
+				"tables"
+			],
 			"properties": {
 				"tables": {
 					"type": "object",
 					"minProperties": 1,
 					"maxProperties": 16,
-					"propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,40}$" },
-					"additionalProperties": { "$ref": "#/$defs/table" }
+					"propertyNames": {
+						"pattern": "^[a-z][a-z0-9_]{0,40}$"
+					},
+					"additionalProperties": {
+						"$ref": "#/$defs/table"
+					}
 				}
 			}
 		},
@@ -86,10 +163,20 @@
 			"items": {
 				"type": "object",
 				"additionalProperties": false,
-				"required": ["operation", "intervalSeconds"],
+				"required": [
+					"operation",
+					"intervalSeconds"
+				],
 				"properties": {
-					"operation": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-					"intervalSeconds": { "type": "integer", "minimum": 60, "maximum": 86400 }
+					"operation": {
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9-]{0,63}$"
+					},
+					"intervalSeconds": {
+						"type": "integer",
+						"minimum": 60,
+						"maximum": 86400
+					}
 				}
 			}
 		},
@@ -103,12 +190,29 @@
 					"items": {
 						"type": "object",
 						"additionalProperties": false,
-						"required": ["id", "title"],
+						"required": [
+							"id",
+							"title"
+						],
 						"properties": {
-							"id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 64 },
-							"title": { "type": "string", "minLength": 1, "maxLength": 60 },
-							"nav": { "enum": ["main"] },
-							"adminOnly": { "type": "boolean" }
+							"id": {
+								"type": "string",
+								"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+								"maxLength": 64
+							},
+							"title": {
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 60
+							},
+							"nav": {
+								"enum": [
+									"main"
+								]
+							},
+							"adminOnly": {
+								"type": "boolean"
+							}
 						}
 					}
 				}
@@ -125,22 +229,57 @@
 		"table": {
 			"type": "object",
 			"additionalProperties": false,
-			"required": ["columns"],
+			"required": [
+				"columns"
+			],
 			"properties": {
 				"columns": {
 					"type": "object",
 					"minProperties": 1,
 					"maxProperties": 64,
-					"propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,40}$" },
+					"propertyNames": {
+						"pattern": "^[a-z][a-z0-9_]{0,40}$"
+					},
 					"additionalProperties": {
 						"type": "object",
 						"additionalProperties": false,
-						"required": ["type"],
+						"required": [
+							"type"
+						],
 						"properties": {
-							"type": { "enum": ["text", "integer", "boolean", "timestamp", "json", "uuid"] },
-							"primary": { "type": "boolean" },
-							"nullable": { "type": "boolean" },
-							"default": { "oneOf": [{ "type": "string", "maxLength": 200 }, { "type": "number" }, { "type": "boolean" }, { "type": "null" }] }
+							"type": {
+								"enum": [
+									"text",
+									"integer",
+									"boolean",
+									"timestamp",
+									"json",
+									"uuid"
+								]
+							},
+							"primary": {
+								"type": "boolean"
+							},
+							"nullable": {
+								"type": "boolean"
+							},
+							"default": {
+								"oneOf": [
+									{
+										"type": "string",
+										"maxLength": 200
+									},
+									{
+										"type": "number"
+									},
+									{
+										"type": "boolean"
+									},
+									{
+										"type": "null"
+									}
+								]
+							}
 						}
 					}
 				},
@@ -150,15 +289,22 @@
 					"items": {
 						"type": "object",
 						"additionalProperties": false,
-						"required": ["columns"],
+						"required": [
+							"columns"
+						],
 						"properties": {
 							"columns": {
 								"type": "array",
 								"minItems": 1,
 								"maxItems": 4,
-								"items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,40}$" }
+								"items": {
+									"type": "string",
+									"pattern": "^[a-z][a-z0-9_]{0,40}$"
+								}
 							},
-							"unique": { "type": "boolean" }
+							"unique": {
+								"type": "boolean"
+							}
 						}
 					}
 				}
@@ -167,13 +313,25 @@
 		"target": {
 			"type": "object",
 			"additionalProperties": false,
-			"required": ["entry"],
-			"properties": { "entry": { "$ref": "#/$defs/packagePath" } }
+			"required": [
+				"entry"
+			],
+			"properties": {
+				"entry": {
+					"$ref": "#/$defs/packagePath"
+				}
+			}
 		},
 		"dependencies": {
 			"type": "object",
-			"propertyNames": { "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$" },
-			"additionalProperties": { "type": "string", "minLength": 1, "maxLength": 128 }
+			"propertyNames": {
+				"pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+			},
+			"additionalProperties": {
+				"type": "string",
+				"minLength": 1,
+				"maxLength": 128
+			}
 		}
 	}
 }
