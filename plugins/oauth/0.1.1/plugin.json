@@ -1,0 +1,21 @@
+{
+    "manifestVersion": 1,
+    "id": "flixer.oauth",
+    "name": "OAuth 2.0",
+    "version": "0.1.1",
+    "description": "Configurable OAuth 2.0 sign-in providers for linked Flixer accounts.",
+    "author": "Flixer",
+    "license": "MIT",
+    "compatibility": {
+        "pluginApi": "^1.0.0",
+        "flixer": ">=1.0.0"
+    },
+    "targets": {
+        "flixer": {
+            "entry": "oauth.wasm"
+        }
+    },
+    "capabilities": ["auth.oauth", "auth.oauth.profiles"],
+    "permissions": ["auth.identity.verify", "network.http.configured"],
+    "settingsSchema": "settings.schema.json"
+}

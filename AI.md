@@ -101,12 +101,12 @@ Once those decisions are resolved, continue implementing the complete solution.
 
 Create a unified plugin architecture supporting the following applications:
 
-| Application | Plugin responsibilities |
-|---|---|
-| `flixer` | Backend functionality, APIs, database integration, background jobs, events, authentication-aware features |
-| `flixer-indexer` | New indexer providers, metadata sources, search providers, discovery and indexing behaviour |
-| `flixer-streamer` | Streaming extensions, playback features, media processing, segment providers and streaming integrations |
-| `flixer-web` | Frontend components, pages, routes, navigation items, styles, settings panels and UI integrations |
+| Application       | Plugin responsibilities                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `flixer`          | Backend functionality, APIs, database integration, background jobs, events, authentication-aware features |
+| `flixer-indexer`  | New indexer providers, metadata sources, search providers, discovery and indexing behaviour               |
+| `flixer-streamer` | Streaming extensions, playback features, media processing, segment providers and streaming integrations   |
+| `flixer-web`      | Frontend components, pages, routes, navigation items, styles, settings panels and UI integrations         |
 
 A plugin must be able to target one application or multiple applications simultaneously.
 
@@ -184,10 +184,10 @@ For example, a hypothetical `plugin.json` could look like:
 ```json
 {
   "manifestVersion": 1,
-  "id": "flixer.skipmedb",
-  "name": "SkipMe.db",
+  "id": "flixer.example",
+  "name": "Flixer Example Plugin",
   "version": "1.0.0",
-  "description": "SkipMe.db segment integration for Flixer",
+  "description": "Example Flixer plugin",
   "author": "Flixer",
   "license": "MIT",
   "homepage": "https://github.com/flixermedia",
@@ -206,11 +206,7 @@ For example, a hypothetical `plugin.json` could look like:
       "entry": "web/"
     }
   },
-  "capabilities": [
-    "media.segments",
-    "api.routes",
-    "web.settings"
-  ],
+  "capabilities": ["media.segments", "api.routes", "web.settings"],
   "permissions": [
     "media.read",
     "network.external",
@@ -304,13 +300,13 @@ A possible directory layout:
 DATA_DIR/
 └── plugins/
     ├── installed/
-    │   ├── flixer.skipmedb/
+    │   ├── flixer.example/
     │   ├── flixer.requests/
     │   └── flixer.theme-songs/
     ├── cache/
     ├── temp/
     └── data/
-        ├── flixer.skipmedb/
+        ├── flixer.example/
         ├── flixer.requests/
         └── flixer.theme-songs/
 ```
@@ -354,7 +350,7 @@ flixer-plugins/
 ├── repository.json
 ├── README.md
 └── plugins/
-    ├── skipmedb/
+    ├── example/
     ├── requests/
     └── theme-songs/
 ```
@@ -371,8 +367,8 @@ For example:
   "description": "Official plugin repository for Flixer",
   "plugins": [
     {
-      "id": "flixer.skipmedb",
-      "path": "plugins/skipmedb"
+      "id": "flixer.example",
+      "path": "plugins/example"
     },
     {
       "id": "flixer.requests",
@@ -573,7 +569,6 @@ Plugins may register new pages.
 Examples:
 
 - `/plugins/requests`
-- `/plugins/skipmedb`
 - `/plugins/example`
 
 Routes must be namespaced or otherwise protected from collisions.
@@ -733,25 +728,9 @@ These plugins should be real, fully functional implementations that also serve a
 
 Do not simply wrap the existing functionality while keeping its implementation tightly coupled to Flixer's core.
 
-## 12.1 SkipMe.db Plugin
+## 12.1 SkipMe.db Plugin Retirement
 
-Plugin ID:
-
-`flixer.skipmedb`
-
-Move the existing SkipMe.db functionality into its own official plugin.
-
-Identify its current implementation and preserve existing behaviour, including:
-
-- Integration with the SkipMe.db service.
-- Media matching.
-- Segment retrieval.
-- Existing caching behaviour.
-- Intro, credits, and other supported segment handling.
-- Existing user or administrator configuration.
-- Existing streaming/player integration.
-
-Determine the exact supported capabilities by analysing the implementation.
+The `flixer.skipmedb` plugin has been removed from the official catalogue, source tree, and versioned release artifacts at the project owner's request. Do not recreate or republish it unless the owner explicitly requests that change. This repository removal does not remove Flixer's core SkipMe.db lookup or uninstall copies already present in Flixer installations.
 
 The plugin must work independently through the new plugin APIs.
 

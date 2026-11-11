@@ -26,7 +26,7 @@
 - **Schema-defined packages:** Validate repository and plugin manifests against versioned JSON schemas.
 - **Integrity checks:** SHA-256 digests and package path validation.
 - **Permission-aware installation:** Flixer requires approval of declared plugin permissions.
-- **Working example:** `flixer.example` demonstrates a WASI backend route and persistent counters.
+- **OAuth 2.0:** Configure external sign-in providers for linked Flixer accounts.
 
 ## 🏗️ Architecture
 
@@ -38,15 +38,15 @@ For the full platform, the API coordinates services; the browser interacts with 
 
 ### Browse and develop
 
-Start at [`repository.json`](repository.json) for the release catalogue and [`schemas/`](schemas/) for JSON schemas. See [`plugins/example/`](plugins/example/) for the working WASI example.
+Start at [`repository.json`](repository.json) for the release catalogue, [`schemas/`](schemas/) for JSON schemas, and [`plugins/oauth/`](plugins/oauth/) for the OAuth plugin.
 
-To rebuild the example from the repository root:
+To build a new OAuth release from the repository root:
 
 ```bash
-./plugins/example/build.sh
+sh plugins/oauth/build.sh
 ```
 
-This requires a Go toolchain supporting `GOOS=wasip1` and `GOARCH=wasm`. The build script regenerates the versioned package and updates the catalogue's SHA-256 and size. Publish a **new immutable release** instead of overwriting a previously published package. Install through Flixer's administrator Plugins page.
+This requires a Go toolchain supporting `GOOS=wasip1` and `GOARCH=wasm`. Set a new version in the plugin manifest and build script before building; the script refuses to overwrite an existing release. Add the new package's SHA-256 and size to the catalogue, then install through Flixer's administrator Plugins page.
 
 ## 🧱 Catalogue structure
 
@@ -55,10 +55,12 @@ flixer-plugins/
 ├── repository.json              # Official plugin index and versions
 ├── schemas/                    # Repository and plugin JSON schemas
 └── plugins/
-    └── example/                # Demonstration WASI plugin
+    └── oauth/                  # Configurable OAuth sign-in plugin
 ```
 
 Each release references a manifest, an archive and its SHA-256 digest (optionally the size). Paths must remain within the repository. The Flixer installation flow validates metadata, compatibility and archive integrity before use.
+
+Catalogue entries may include `icon` and `banner` paths relative to `repository.json`, for example `"icon": "plugins/oauth/icon.png"`. Images must be PNG, JPEG, WebP or GIF, at most 5 MiB. Flixer displays them in the admin plugin catalogue and safely fetches them from the repository.
 
 ## 🧩 Plugin lifecycle
 
@@ -70,22 +72,22 @@ Each release references a manifest, an archive and its SHA-256 digest (optionall
 
 ## 🧪 Current versus planned plugins
 
-- **Available example:** `flixer.example`, a WASI backend plugin with an authenticated hello endpoint and persistent counters.
-- **Planned migrations, not shipped in this catalogue as confirmed releases:** `flixer.skipmedb`, `flixer.requests`, `flixer.theme-songs`.
+- **Available plugin:** `flixer.oauth`, a configurable OAuth 2.0 sign-in provider.
+- **Planned migrations, not shipped in this catalogue as confirmed releases:** `flixer.requests`, `flixer.theme-songs`. SkipMe.db has been removed from the catalogue.
 
 Read [`AI.md`](AI.md), [`repository.json`](repository.json) and both schema files before making catalogue changes.
 
 ## 🧩 Flixer ecosystem
 
-| Repository | Purpose |
-| --- | --- |
-| [Flixer](https://github.com/flixermedia/flixer) | The self-hosted backend API, authentication, libraries, and administration service. |
-| [Flixer Web](https://github.com/flixermedia/flixer-web) | The Vue 3 application that powers browsing, sign-in, discovery, and playback interfaces. |
-| [Flixer Streamer](https://github.com/flixermedia/flixer-streamer) | The Go service responsible for authorised media delivery and FFmpeg processing. |
-| [Flixer Indexer](https://github.com/flixermedia/flixer-indexer) | The Go worker and API service for discovering, identifying, probing, and enriching media. |
-| [Flixer Updater](https://github.com/flixermedia/flixer-updater) | The Go sidecar that orchestrates Docker Compose updates and restores. |
-| [Flixer Plugins](https://github.com/flixermedia/flixer-plugins) | The official versioned catalogue of Flixer plugins and plugin schemas. |
-| [Flixer Docs](https://github.com/flixermedia/flixer-docs) | The Docusaurus source for Flixer platform documentation. |
+| Repository                                                        | Purpose                                                                                   |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [Flixer](https://github.com/flixermedia/flixer)                   | The self-hosted backend API, authentication, libraries, and administration service.       |
+| [Flixer Web](https://github.com/flixermedia/flixer-web)           | The Vue 3 application that powers browsing, sign-in, discovery, and playback interfaces.  |
+| [Flixer Streamer](https://github.com/flixermedia/flixer-streamer) | The Go service responsible for authorised media delivery and FFmpeg processing.           |
+| [Flixer Indexer](https://github.com/flixermedia/flixer-indexer)   | The Go worker and API service for discovering, identifying, probing, and enriching media. |
+| [Flixer Updater](https://github.com/flixermedia/flixer-updater)   | The Go sidecar that orchestrates Docker Compose updates and restores.                     |
+| [Flixer Plugins](https://github.com/flixermedia/flixer-plugins)   | The official versioned catalogue of Flixer plugins and plugin schemas.                    |
+| [Flixer Docs](https://github.com/flixermedia/flixer-docs)         | The Docusaurus source for Flixer platform documentation.                                  |
 
 ## 🤝 Contributing
 
